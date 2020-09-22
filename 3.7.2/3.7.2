@@ -1,0 +1,148 @@
+from math import sqrt
+from math import pi
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams['font.family'] = 'STIXGeneral'
+
+
+def LSM(x, y, n):
+    x_y = np.mean(x * y)
+    x_ = np.mean(x)
+    y_ = np.mean(y)
+    x_2 = np.mean(x ** 2)
+    y_2 = np.mean(y ** 2)
+    b = (x_y - (x_ * y_))/\
+        (x_2 - (x_ ** 2))
+    sigma_b = 1/sqrt(n) * sqrt((y_2 - (y_ ** 2))/
+                               (x_2 - (x_ ** 2)) - b ** 2)
+    epsilon = sigma_b / b
+    return b, sigma_b, epsilon
+
+
+U_z = open('U(z).txt', 'r')
+U_z_str = U_z.read().splitlines()[1:]
+
+z = np.zeros(len(U_z_str))
+U = np.zeros(len(U_z_str))
+
+for i in range(len(U_z_str)):
+    data_z, data_U = U_z_str[i].split('\t\t')
+    z[i] = data_z
+    U[i] = data_U
+
+plt.plot(z, U, '.', label='экспериментальные точки', markerfacecolor='red', markeredgecolor='red',
+         markersize=10, markeredgewidth=1)
+plt.plot(z, U, label='аппрокс. точки', color='blue', linewidth=1)
+plt.xlabel(r'$z$, мм', size=18)
+plt.ylabel(r'$U$, мкВ', size=18)
+# plt.show()
+# plt.savefig('U(z).png')
+plt.close()
+
+lambda_wave_exp = 2 * (39 - 17)  # мм
+sigma_lambda_wave_exp = 1
+epsilon_lambla_wave_exp = sigma_lambda_wave_exp / lambda_wave_exp
+
+print('Длина волны в волноводе (эксп) = ' + str(lambda_wave_exp) + '+-' + str(sigma_lambda_wave_exp))
+
+lambda_0 = 3 * (10 ** 11) / (9320 * (10 ** 6))
+sigma_lambda_0 = lambda_0 * 1 / 9320
+epsilon_lambda_0 = 1 / 9320
+
+a = 23
+sigma_a = 1
+epsilon_a = sigma_a / a
+
+lambda_wave_th = lambda_0 / sqrt(1 - (lambda_0 / (2 * a)) ** 2)
+
+print('Длина волны в волноводе (теор) = ' + str(lambda_wave_th))
+
+omega_cr = pi * 3 * 10 ** 11 / a
+sigma_omega_cr = omega_cr * epsilon_a
+epsilon_omega_cr = sigma_omega_cr / omega_cr
+
+freq = 9320 * 10 ** 6
+sigma_freq = 10 ** 6
+epsilon_freq = sigma_freq / freq
+
+omega = 2 * pi * freq
+sigma_omega = omega * epsilon_freq
+epsilon_omega = epsilon_freq
+
+velo_f = 3 * 10 ** 11 / (sqrt(1 - (omega_cr / omega) ** 2))
+sigma_velo_f = velo_f * sqrt((epsilon_omega) ** 2 + (epsilon_omega_cr) ** 2)
+epsilon_velo_f = sigma_velo_f / velo_f
+
+print('Фазовая скорость = ' + str(velo_f) + '+-' + str(sigma_velo_f) + '(' + str(epsilon_velo_f) + ')')
+
+sigma_U = 1
+
+U_min_bez = 10  # мкВ
+U_max_bez = 25
+
+K_bez = sqrt(U_max_bez / U_min_bez)
+sigma_K_bez = K_bez * sqrt((0.5 * sigma_U / U_min_bez) ** 2 + (0.5 * sigma_U / U_max_bez) ** 2)
+epsilon_K_bez = sigma_K_bez / K_bez
+
+r_bez = (K_bez - 1) / (K_bez + 1)
+sigma_r_bez = r_bez * epsilon_K_bez
+epsilon_r_bez = sigma_r_bez / r_bez
+
+print('Коэф-т отражения без загрушки = ' + str(r_bez) + '+-' + str(sigma_r_bez) + '(' + str(epsilon_r_bez) + ')')
+
+U_min_with = 14
+U_max_with = 18
+
+K_with = sqrt(U_max_with / U_min_with)
+sigma_K_with = K_with * sqrt((0.5 * sigma_U / U_min_with) ** 2 + (0.5 * sigma_U / U_max_with) ** 2)
+epsilon_K_with = sigma_K_with / K_with
+
+r_with = (K_with - 1) / (K_with + 1)
+sigma_r_with = r_with * epsilon_K_with
+epsilon_r_with = sigma_r_with / r_with
+
+print('Коэф-т отражения c поглощ. нагр. = ' + str(r_with) + '+-' + str(sigma_r_with) + '(' + str(epsilon_r_with) + ')')
+
+
+
+gamma_z = open('gamma(z).txt', 'r')
+gamma_z_str = gamma_z.read().splitlines()[1:]
+
+z_gam = np.zeros(len(gamma_z_str))
+gamma = np.zeros(len(gamma_z_str))
+
+for i in range(len(gamma_z_str)):
+    z_gam[i] = (gamma_z_str[i].split('\t\t'))[0]
+    gamma[i] = (gamma_z_str[i].split('\t\t'))[1]
+
+
+beta, sigma_beta, epsilon_beta = LSM(z_gam, gamma, len(gamma_z_str))
+
+print('Эксп. бета = ' + str(beta) + '+-' + str(sigma_beta) + '(' + str(epsilon_beta) + ')')
+
+b = (np.mean(gamma) - beta * np.mean(z_gam))
+sigma_b = sigma_beta * sqrt(np.mean(z_gam ** 2) - np.mean(z_gam) ** 2)
+
+x = np.linspace(28, 45, 100)
+y = beta * x + b
+
+plt.plot(z_gam, gamma, '.', label='экспериментальные точки', markerfacecolor='red', markeredgecolor='red',
+         markersize=10, markeredgewidth=1)
+plt.plot(x, y, label='аппрокс. точки', color='blue', linewidth=1)
+plt.xlabel(r'$z$, см', size=18)
+plt.ylabel(r'$\gamma$, дБ', size=18)
+# plt.show()
+# plt.savefig('gamma(z).png')
+plt.close()
+
+a_2 = 16
+sigma_a_2 = 1
+epsilon_a_2 = sigma_a_2 / a_2
+
+beta_th = pi / (a_2 * 10 ** (-2)) * sqrt(1 - (2 * a_2 / lambda_0) ** 2) / 1.15
+sigma_beta_th = beta_th * sqrt(epsilon_a_2 ** 2 + epsilon_lambda_0 ** 2)
+epsilon_beta_th = sigma_beta_th / beta_th
+print('Теор. beta = ' + str(beta_th) + '+-' + str(sigma_beta_th) + '(' + str(epsilon_beta_th) + ')')
