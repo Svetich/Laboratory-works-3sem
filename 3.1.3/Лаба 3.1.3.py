@@ -20,7 +20,9 @@ def LSM(x, y, n):
     sigma_b = 1/sqrt(n) * sqrt((y_2 - (y_ ** 2))/
                                (x_2 - (x_ ** 2)) - b ** 2)
     epsilon = sigma_b / b
-    return b, sigma_b, epsilon
+
+    a = y_ - b * x_
+    return b, a, sigma_b, epsilon
 
 
 B_p_mes = 114 * 10  # мТл
@@ -107,7 +109,7 @@ t = np.array([33.28, 29.25, 28.23, 26.21, 22.18, 19.15, 16.13, 14.10, 12.08, 10.
 N = np.linspace(10, 10, 10)
 n = np.array([12, 11, 10, 9, 8, 7, 6, 5, 4, 3])
 T = t / N
-b_Tn, sigma_b_Tn, epsilon_b_Tn = LSM(n, T, 10)
+b_Tn, a, sigma_b_Tn, epsilon_b_Tn = LSM(n, T, 10)
 
 print('Коэф. наклона T(n) = ' + str(b_Tn) + '+-' + str(sigma_b_Tn) +
       ', ' + str(epsilon_b_Tn))
@@ -148,7 +150,7 @@ power_bad = m_bad * g_bad
 shoulders_bad = np.array([d_mean * 5, d_mean * 4])
 moment_power_bad = shoulders_bad * power_bad
 
-b_Mn, sigma_b_Mn, epsilon_b_Mn = LSM(n_even, moment_power, 3)
+b_Mn, a_Mn, sigma_b_Mn, epsilon_b_Mn = LSM(n_even, moment_power, 3)
 
 print('Коэф. наклона M(n) = ' + str(b_Mn) + '+-' + str(sigma_b_Mn) +
       ', ' + str(epsilon_b_Mn))
@@ -173,7 +175,7 @@ epsil_B = sigma_B/B
 print('Индукция МП Земли = ' + str(B) + '+-' + str(sigma_B) + 'Гс, ' +str(epsil_B))
 
 x_Mn = np.linspace(0, 10, 100)
-y_Mn = b_Mn * x_Mn
+y_Mn = b_Mn * x_Mn + a_Mn
 
 plt.plot(n_even, moment_power, '.', label='экспериментальные точки', markerfacecolor='red', markeredgecolor='red',
          markersize=10, markeredgewidth=1)
@@ -183,7 +185,7 @@ plt.plot(x_Mn, y_Mn, label='аппрокс. точки', color='black', linewidt
 plt.xlabel(r'$n$', size=18)
 plt.ylabel(r'$M$, $дин \cdot см$', size=18)
 # plt.savefig('M(n).png')
-# plt.show()
+plt.show()
 plt.close()
 
 
